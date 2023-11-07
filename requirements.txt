@@ -1,4 +1,7 @@
+# /requirements.txt
+
 flask
-Authlib
-marshmallow
-bandit
+python-dotenv
+python-jose
+flask-cors
+six
