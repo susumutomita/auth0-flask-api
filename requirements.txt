@@ -1,2 +1,4 @@
 flask
 Authlib
+marshmallow
+bandit

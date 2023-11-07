@@ -1,48 +1,49 @@
-"""Python Flask API Auth0 integration example
-"""
+from flask import Flask, jsonify, request
 
-from os import environ as env
+from expense import Expense, ExpenseSchema
+from income import Income, IncomeSchema
+from transaction_type import TransactionType
+from auth0 import requires_auth, get_token_auth_header
 
-from dotenv import load_dotenv, find_dotenv
-from flask import Flask, jsonify
-from authlib.integrations.flask_oauth2 import ResourceProtector
-from validator import Auth0JWTBearerTokenValidator
+app = Flask(__name__)
 
-require_auth = ResourceProtector()
-validator = Auth0JWTBearerTokenValidator("{yourDomain}", "{yourApiIdentifier}")
-require_auth.register_token_validator(validator)
+transactions = [
+  Income('Salary', 5000),
+  Income('Dividends', 200),
+  Expense('pizza', 50),
+  Expense('Rock Concert', 100)
+]
 
-APP = Flask(__name__)
+@app.route('/incomes')
+@cross_origin(headers=['Content-Type', 'Authorization'])
+def get_incomes():
+  schema = IncomeSchema(many=True)
+  incomes = schema.dump(
+    filter(lambda t: t.type == TransactionType.INCOME, transactions)
+  )
+  return jsonify(incomes)  # .dataを削除
 
+@app.route('/incomes', methods=['POST'])
+def add_income():
+  income = IncomeSchema().load(request.get_json())
+  transactions.append(income)  # .dataを削除
+  return "", 204
 
-@APP.route("/api/public")
-def public():
-    """No access token required."""
-    response = (
-        "Hello from a public endpoint! You don't need to be"
-        " authenticated to see this."
-    )
-    return jsonify(message=response)
+@app.route('/expenses')
+@cross_origin(headers=['Content-Type', 'Authorization'])
+@requires_auth
+def get_expenses():
+  schema = ExpenseSchema(many=True)
+  expenses = schema.dump(
+      filter(lambda t: t.type == TransactionType.EXPENSE, transactions)
+  )
+  return jsonify(expenses)  # .dataを削除
 
+@app.route('/expenses', methods=['POST'])
+def add_expense():
+  expense = ExpenseSchema().load(request.get_json())
+  transactions.append(expense)  # .dataを削除
+  return "", 204
 
-@APP.route("/api/private")
-@require_auth(None)
-def private():
-    """A valid access token is required."""
-    response = (
-        "Hello from a private endpoint! You need to be" " authenticated to see this."
-    )
-    return jsonify(message=response)
-
-
-@APP.route("/api/private-scoped")
-@require_auth("read:messages")
-def private_scoped():
-    """A valid access token and scope are required."""
-    response = (
-        "Hello from a private endpoint! You need to be"
-        " authenticated and have a scope of read:messages to see"
-        " this."
-    )
-    return jsonify(message=response)
-
+if __name__ == "__main__":
+    app.run()
