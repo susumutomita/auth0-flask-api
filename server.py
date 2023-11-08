@@ -1,5 +1,7 @@
 # /server.py
 
+import os
+from dotenv import load_dotenv
 import json
 from six.moves.urllib.request import urlopen
 from functools import wraps
@@ -8,8 +10,13 @@ from flask import Flask, request, jsonify, _request_ctx_stack
 from flask_cors import cross_origin
 from jose import jwt
 
-AUTH0_DOMAIN = '{yourDomain}'
-API_AUDIENCE = YOUR_API_AUDIENCE
+# Load environment variables from .env file
+load_dotenv()
+
+AUTH0_DOMAIN = os.getenv('AUTH0_DOMAIN')
+API_AUDIENCE = os.getenv('API_AUDIENCE')
+print(AUTH0_DOMAIN)
+print(API_AUDIENCE)
 ALGORITHMS = ["RS256"]
 
 APP = Flask(__name__)
